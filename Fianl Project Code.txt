@@ -1,0 +1,254 @@
+#include <list>
+#include<string>
+#include <iostream>
+#include <fstream>
+#include "graphics.h"
+#include<cmath>
+using namespace std;
+
+class MyGraph {
+private:
+	int V;
+	list<int>* adj;
+public:
+	MyGraph(int V);
+	~MyGraph();
+	void AddEdge(int u, int w);
+	bool EdgeExist(int u, int w);
+	void graph_determination(int n, int l);
+	int inDegree(int i);
+	int outDegree(int i);
+};
+
+MyGraph::MyGraph(int V) {
+	this->V = V;
+	adj = new list<int>[V];
+}
+MyGraph::~MyGraph() { delete[] adj; }
+
+void MyGraph::AddEdge(int u, int w) {
+	adj[u].push_back(w);
+}
+bool MyGraph::EdgeExist(int u, int w)
+{
+	list<int>::iterator it;
+	list<int> l = adj[u];
+	for (it = l.begin();it != l.end();it++)
+		if (*it == w) return true;
+	return false;
+}
+
+int MyGraph::inDegree(int i) {
+	int in = 0;
+	for (int j = 0;j < V; j++) {
+		if (j != i && EdgeExist(j, i))
+			in++;
+	}
+	return in;
+}
+
+int MyGraph::outDegree(int i) {
+	list<int> l = adj[i];
+	if (EdgeExist(i, i))return l.size() - 1;
+	return l.size();
+}
+
+void MyGraph::graph_determination(int n, int l) {
+	settextstyle(8, 0, 3);
+	// it has a self loop
+	int loop = 0;
+	for (int i = 0;i < n;i++) {
+		if (EdgeExist(i, i)) {
+			outtextxy(30, 750, "The graph has a self loop!");
+			loop = 1;
+		}
+	}
+	// it has an isolated vertex
+	for (int i = 0;i < n;i++) {
+		if (inDegree(i) == 0 && outDegree(i) == 0) {
+			outtextxy(30,700,"The graph has an isolated vertex!");
+			return;
+		}
+	}
+	//  it is complete
+	if (!loop && l == n * (n - 1)) {
+		outtextxy(30, 750, "The graph is a complete graph!");
+		return;
+	}
+	if (!loop) {
+		outtextxy(30, 750, "The graph has nothing special!");
+	}
+}
+
+
+void PlotGraph(string fileName)
+{
+
+	ifstream input(fileName);
+	if (!input)
+	{
+		cout << "Cannot open the File : " << fileName << endl;
+		return;
+	}
+	int n = 300, graph_no = 0, l = 0, value = 300;
+	input >> value;
+	n = value;
+
+	while (n != 0)
+	{
+		++graph_no;
+		MyGraph* g = new MyGraph(n);
+		input >> l;
+		string s = to_string(graph_no);
+		char* m = (char*)s.c_str();
+		initwindow(1200, 800, "Graph");
+		
+		int node = 0;
+		int x=700, y=100;
+		int* nodex = new int[n];
+		int* nodey = new int[n];
+		for (double i = 0;i < 360;i+=360/n) {
+			double r= i * 3.14159 / 180;
+			double e = 180 * 3.14159 / 180 - r;
+			x = 700+ 300*cos(r);
+			y = 400+ 300*sin(r);
+			
+			nodex[node] = x;
+			nodey[node] = y;
+			node++;
+			
+		}
+		for (int i = 0;i < l;i++) {
+			int v, u;
+			input >> v;
+			input >> u;
+			g->AddEdge(v, u);
+
+			if (!(g->EdgeExist(u, v)) && u != v) {
+				setcolor(1+(u+v)%15);
+				line(nodex[v], nodey[v], nodex[u], nodey[u]);
+				string vs = to_string(v);
+				string us = to_string(u);
+				string edge = "< " + vs + " , " + us + " > ";
+				char* m = (char*)edge.c_str();
+				outtextxy(((nodex[v]+(nodex[u]+nodex[v])/2)/2)-40 , ((nodey[v]+((nodey[u]+nodey[v])/2))/2)-5, m);
+			}
+			 if (g->EdgeExist(u, v)&&u!=v) {
+			    setcolor(1 + (u + v) % 15);
+				string vs = to_string(v);
+				string us = to_string(u);
+				string edge = "< " + vs + " , " + us + " > ";
+				char* m = (char*)edge.c_str();
+				outtextxy(((nodex[v] + ((nodex[u] + nodex[v]) / 2)) / 2)-40, ((nodey[v] + ((nodey[u] + nodey[v]) / 2)) / 2)-5, m);
+			}
+			else if(u==v) {
+				 setcolor(1 + (u + v) % 15);
+				 string vs = to_string(v);
+				 string edge = "< " + vs + " , " + vs + " > ";
+				 char* m = (char*)edge.c_str();
+				 outtextxy(nodex[v]- 80, nodey[v]+20 , m);
+				 ellipse(nodex[u], nodey[u],110,250,70,20);
+			}
+		}
+		
+
+		setcolor(15);
+		g->graph_determination(n, l);
+		
+		for (int b = 0;b < n;b++) {
+			circle(nodex[b], nodey[b], 30);
+			setfillstyle(SOLID_FILL, BLACK);
+			floodfill(nodex[b] + 5, nodey[b] + 5, WHITE);
+			setcolor(15);
+			s = to_string(b);
+			m = (char*)s.c_str();
+			outtextxy(nodex[b] -10, nodey[b] - 10, m);
+		}
+		input >> n;
+		settextstyle(8, 0, 3);
+		string name = to_string(graph_no);
+		char* nam = (char*)name.c_str();
+		outtextxy(30,20,"  Graph ");
+		outtextxy(150, 20, nam);
+
+		
+
+	}
+      input.close();
+	  
+}
+
+int main()
+{
+	PlotGraph("input.txt");
+	system("pause");
+	return 0;
+}
+
+
+
+//input.txt
+/*
+4
+12
+0 1
+0 2
+0 3
+1 0
+1 2
+1 3
+2 0
+2 1
+2 3
+3 0
+3 1
+3 2
+
+8
+7
+0 1
+1 2
+1 4
+5 2
+4 2
+5 7
+6 7
+
+3
+5
+1 1
+0 1
+0 2
+2 0
+2 1
+
+9 
+6
+0 4
+0 6
+8 1
+2 7
+5 2
+3 6
+
+5
+6
+0 1
+1 2
+2 3
+2 2
+3 2
+1 1
+
+0
+*/
+
+
+
+
+
+
+
+
+
+
